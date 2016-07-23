@@ -6,6 +6,10 @@ import random
 import time
 
 
+class TimeoutError(Exception):
+    pass
+
+
 FNULL = open(os.devnull, 'w')
 def ex(cmd):
     # print(cmd)
@@ -216,7 +220,7 @@ class NonAdq(DD.DD):
                 open(self.path + '.{0}.C'.format(c), 'w').write(s)
                 print 'RES:', c, len(k)
 
-            except RuntimeError:
+            except TimeoutError:
                 pass
         for m in [1, 2, 4, 8, 16, 32]:
             self.init()
@@ -228,12 +232,13 @@ class NonAdq(DD.DD):
                 s = self.coerce(k)
                 open(self.path + '.{0}.M'.format(c), 'w').write(s)
                 print 'RES:', m, len(k)
-            except RuntimeError:
+            except TimeoutError:
                 pass
+
     def _test(self, deltas):
         # returns either self.PASS, self.FAIL, or self.UNRESOLVED.
         if time.time() - self.starttime > 1800: # 30 minute timout
-            raise RuntimeError
+            raise TimeoutError('Timeout!')
         if deltas == []:
             return self.PASS
 
