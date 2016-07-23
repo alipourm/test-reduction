@@ -206,16 +206,18 @@ class NonAdq(DD.DD):
     def coerce(self, deltas):
         if self.sut == NonAdq.YAFFS or self.sut == NonAdq.JS:
             return '\n'.join(deltas)
-        elif self.sut == NonAdq.GREP or self.sut == NonAdq.GZIP:
+        if self.sut == NonAdq.GREP or self.sut == NonAdq.GZIP:
             return ''.join(deltas)
-       raise NotImplementedError
+        raise NotImplementedError
 
     def experiment(self):
         for c in [60,70,80,90,95,100]:
             self.init()
             self.METHOD = NonAdq.CCOV
             self.C = c
-            k= self.ddmin(self.deltas)
+            k = self.ddmin(self.deltas)
+            s = self.coerce(k)
+            open(self.path + '.{0}.C'.format(c), 'w').write(s)
             print 'RES:', c, len(k)
             log(c)
         for m in [1, 2, 4, 8, 16, 32]:
@@ -223,8 +225,10 @@ class NonAdq(DD.DD):
             self.METHOD = NonAdq.NMUT
             random.shuffle(self.detectedMutants)
             self.targetMutants  = self.detectedMutants[:m]
-            print self.ddmin(self.deltas)
-            print(m)
+            k = self.ddmin(self.deltas)
+            s = self.coerce(k)
+            open(self.path + '.{0}.M'.format(c), 'w').write(s)
+            print 'RES:', m, len(k)
 
     def _test(self, deltas):
         # returns either self.PASS, self.FAIL, or self.UNRESOLVED.
