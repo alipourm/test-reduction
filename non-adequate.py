@@ -161,9 +161,9 @@ class NonAdq(DD.DD):
         self.oracle = oracle
         self.mutants = mutants
         self.lineCov = self.getCoverage(deltas)
-        # self.detectedMutants = self.getMutants(deltas)
-        # print 'detected:', len(self.detectedMutants)
-        # print 'all:', len(mutants)
+        self.detectedMutants = self.getMutants(deltas)
+        print 'detected:', len(self.detectedMutants)
+        print 'all:', len(mutants)
 
 
 
