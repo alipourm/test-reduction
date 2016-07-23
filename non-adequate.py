@@ -215,10 +215,15 @@ class NonAdq(DD.DD):
             self.METHOD = NonAdq.CCOV
             self.C = c
             try:
-                k = self.ddmin(self.deltas)
-                s = self.coerce(k)
+                result = self.ddmin(self.deltas)
+                s = self.coerce(result)
                 open(self.path + '.{0}.C'.format(c), 'w').write(s)
-                print 'RES:', c, len(k)
+                coverage = self.getCoverage(result)
+                detectedMut = self.getMutants(result)
+                open(self.path + '.{0}.C.cov'.format(c), 'w').write(''.join(coverage))
+                open(self.path + '.{0}.C.mut'.format(c), 'w').write('\n'.join(sorted(detectedMut)))
+
+                print 'RES:', c, len(result)
 
             except TimeoutError:
                 pass
@@ -228,10 +233,15 @@ class NonAdq(DD.DD):
             random.shuffle(self.detectedMutants)
             self.targetMutants  = self.detectedMutants[:m]
             try:
-                k = self.ddmin(self.deltas)
-                s = self.coerce(k)
+                result = self.ddmin(self.deltas)
+                s = self.coerce(result)
                 open(self.path + '.{0}.M'.format(c), 'w').write(s)
-                print 'RES:', m, len(k)
+                coverage = self.getCoverage(result)
+                detectedMut = self.getMutants(result)
+                open(self.path + '.{0}.M.cov'.format(m), 'w').write(''.join(coverage))
+                open(self.path + '.{0}.M.mut'.format(m), 'w').write('\n'.join(sorted(detectedMut)))
+
+                print 'RES:', m, len(result)
             except TimeoutError:
                 pass
 
