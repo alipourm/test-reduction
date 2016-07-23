@@ -152,8 +152,9 @@ class NonAdq(DD.DD):
 
 
 
-    def __init__(self, sut, deltas, mutants, gcov_dir, gcov_exe, oracle):
+    def __init__(self, path, sut, deltas, mutants, gcov_dir, gcov_exe, oracle):
         DD.DD.__init__(self)
+        self.path = path
         self.sut = sut
         self.deltas = deltas
         self.gcov_dir = gcov_dir
@@ -202,6 +203,12 @@ class NonAdq(DD.DD):
         self.maximize = 1
         self.assume_axioms_hold = 1
 
+    def coerce(self, deltas):
+        if self.sut == NonAdq.YAFFS or self.sut == NonAdq.JS:
+            return '\n'.join(deltas)
+        elif self.sut == NonAdq.GREP or self.sut == NonAdq.GZIP:
+            return ''.join(deltas)
+       raise NotImplementedError
 
     def experiment(self):
         for c in [60,70,80,90,95,100]:
@@ -307,7 +314,7 @@ if __name__ == '__main__':
     tcfile.close()
 
     mutants = map(lambda s:s.strip(), open(mutantFile).readlines())
-    myDD = NonAdq(sut, deltas, mutants, gcov_dir, gcov_exe, oracle)
+    myDD = NonAdq(tc, sut, deltas, mutants, gcov_dir, gcov_exe, oracle)
 
     print myDD.detects(deltas, gcov_dir + '/' + gcov_exe)
 
