@@ -3,7 +3,7 @@ import DD
 import js
 import os
 import random
-
+import time
 
 
 FNULL = open(os.devnull, 'w')
@@ -97,17 +97,14 @@ class NonAdq(DD.DD):
 
         cmd = "rm -f {0}/*.gcov {0}/*.gcda".format(self.gcov_dir)
         ex(cmd)
-        print self.runWith(self.gcov_dir + "/" + self.gcov_exe, deltas)
+        self.runWith(self.gcov_dir + "/" + self.gcov_exe, deltas)
         gcnos = glob.glob(self.gcov_dir + "/*gcno")
         log('calcov')
 
         for f in gcnos:
             f = f.split(os.sep)[-1]
-            # log(f)
+            ret = subprocess.call(['gcov', f], cwd=self.gcov_dir, stdout=FNULL)
 
-
-            p = subprocess.call(['gcov', f], cwd=self.gcov_dir, stdout=FNULL)
-            #p.wait()
 
         gcovs = sorted(glob.glob(self.gcov_dir + "/*.gcov"))
         # if self.sut == NonAdq.YAFFS:
@@ -134,7 +131,6 @@ class NonAdq(DD.DD):
     def detects(self, deltas, m):
         oracleout = self.getOracleOut(deltas)
         mout = self.runWith(m, deltas)
-        print mout
         if oracleout != mout:
             return True
         else:
@@ -142,7 +138,6 @@ class NonAdq(DD.DD):
 
 
     def getMutants(self, deltas):
-        oracleout = self.getOracleOut(deltas)
         detectedMutants = []
         for m in self.mutants:
             if self.detects(deltas, m):
@@ -175,7 +170,6 @@ class NonAdq(DD.DD):
     def checkCov(self, deltas, C):
 
         newcov = self.getCoverage(deltas)
-        print 'here'
         if len(newcov) != len(self.lineCov):
             return False
         matches = 0
@@ -184,7 +178,6 @@ class NonAdq(DD.DD):
         for i in range(total):
             if newcov[i] == self.lineCov[i]:
                 matches += 1
-        print 'PPP', float(matches)*100./total
         if float(matches)*100./total >= C:
             return True
         else:
@@ -194,6 +187,7 @@ class NonAdq(DD.DD):
     CCOV = 1
 
     def init(self):
+
         self.__resolving = 0
         self.__last_reported_length = 0
         self.monotony = 0
@@ -202,6 +196,7 @@ class NonAdq(DD.DD):
         self.minimize = 1
         self.maximize = 1
         self.assume_axioms_hold = 1
+        self.starttime = time.time()
 
     def coerce(self, deltas):
         if self.sut == NonAdq.YAFFS or self.sut == NonAdq.JS:
@@ -215,23 +210,30 @@ class NonAdq(DD.DD):
             self.init()
             self.METHOD = NonAdq.CCOV
             self.C = c
-            k = self.ddmin(self.deltas)
-            s = self.coerce(k)
-            open(self.path + '.{0}.C'.format(c), 'w').write(s)
-            print 'RES:', c, len(k)
-            log(c)
+            try:
+                k = self.ddmin(self.deltas)
+                s = self.coerce(k)
+                open(self.path + '.{0}.C'.format(c), 'w').write(s)
+                print 'RES:', c, len(k)
+
+            except RuntimeError:
+                pass
         for m in [1, 2, 4, 8, 16, 32]:
             self.init()
             self.METHOD = NonAdq.NMUT
             random.shuffle(self.detectedMutants)
             self.targetMutants  = self.detectedMutants[:m]
-            k = self.ddmin(self.deltas)
-            s = self.coerce(k)
-            open(self.path + '.{0}.M'.format(c), 'w').write(s)
-            print 'RES:', m, len(k)
-
+            try:
+                k = self.ddmin(self.deltas)
+                s = self.coerce(k)
+                open(self.path + '.{0}.M'.format(c), 'w').write(s)
+                print 'RES:', m, len(k)
+            except RuntimeError:
+                pass
     def _test(self, deltas):
         # returns either self.PASS, self.FAIL, or self.UNRESOLVED.
+        if time.time() - self.starttime > 1800: # 30 minute timout
+            raise RuntimeError
         if deltas == []:
             return self.PASS
 
@@ -243,10 +245,10 @@ class NonAdq(DD.DD):
 
         if self.METHOD == NonAdq.CCOV:
             if self.checkCov(deltas, self.C):
-                print '##', deltas, self.C
+                # print '##', deltas, self.C
                 return self.FAIL
             else:
-                print '##', deltas, self.C
+                # print '##', deltas, self.C
                 return self.PASS
 
         return self.UNRESOLVED
