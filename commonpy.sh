@@ -10,7 +10,7 @@ ulimit -c 0
 TC=TC$SGE_TASK_ID
 DATA=/nfs/stak/students/a/alipourm/cluster-share/tcmin/pydata/$SUT
 cd $TMP
-cp -r nfs/stak/students/a/alipourm/test-reduction .
+cp -r /nfs/stak/students/a/alipourm/test-reduction .
 cd test-reduction
 cp testcases/$SUT/$TC .
 python non-adequate.py -sut $SUT -tc $TC -mutfile  /scratch/${SUT}muts.txt
