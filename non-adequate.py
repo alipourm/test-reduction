@@ -3,6 +3,7 @@ import DD
 import js
 import os
 import random
+import re
 import time
 
 
@@ -52,8 +53,10 @@ class NonAdq(DD.DD):
             f.write(s)
             f.flush()
             cmd = "timeout 1 {0} -f {1}".format(executable, testpath)
-
             out = ex(cmd)
+            pattern = re.compile("before [0-9]+, after [0-9]+, break [0-9a-f]+")
+            return pattern.sub('', out)
+
 
         if self.sut == NonAdq.GZIP:
             s = ''.join(deltas)
@@ -76,10 +79,8 @@ class NonAdq(DD.DD):
                     out += 'OK!'
                 else:
                     out += 'NO!'
-                f.close()
 
-        # f.close()
-        return out
+            return out
 
     cache = {}
 
