@@ -238,7 +238,7 @@ class NonAdq(DD.DD):
             try:
                 result = self.ddmin(self.deltas)
                 s = self.coerce(result)
-                open(self.path + '.{0}.M'.format(c), 'w').write(s)
+                open(self.path + '.{0}.M'.format(m), 'w').write(s)
                 coverage = self.getCoverage(result)
                 covstrlist = map(lambda n: str(n), coverage)
                 detectedMut = self.getMutants(result)
