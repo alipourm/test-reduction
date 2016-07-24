@@ -343,11 +343,7 @@ if __name__ == '__main__':
 
     print myDD.detects(deltas, gcov_dir + '/' + gcov_exe)
 
-    print myDD.checkCov(['0', '1,/yaffs2'], 100)
 
     myDD.experiment()
 
 
-
-    # (c, c1, c2) = dd.ddmin(deltas)	# Invoke DD
-    #print c1, "passes,", c2, "fails"
