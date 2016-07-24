@@ -206,7 +206,7 @@ class NonAdq(DD.DD):
         if self.sut == NonAdq.YAFFS or self.sut == NonAdq.JS:
             return '\n'.join(deltas)
         if self.sut == NonAdq.GREP or self.sut == NonAdq.GZIP:
-            return ''.join(deltas)
+            return ''.join(deltas)  
         raise NotImplementedError
 
     def experiment(self):
@@ -220,7 +220,7 @@ class NonAdq(DD.DD):
                 open(self.path + '.{0}.C'.format(c), 'w').write(s)
                 coverage = self.getCoverage(result)
                 detectedMut = self.getMutants(result)
-                open(self.path + '.{0}.C.cov'.format(c), 'w').write(''.join(coverage))
+                open(self.path + '.{0}.C.cov'.format(c), 'w').write(map(lambda n: str(n), coverage))
                 open(self.path + '.{0}.C.mut'.format(c), 'w').write('\n'.join(sorted(detectedMut)))
 
                 print 'RES:', c, len(result)
@@ -238,7 +238,7 @@ class NonAdq(DD.DD):
                 open(self.path + '.{0}.M'.format(c), 'w').write(s)
                 coverage = self.getCoverage(result)
                 detectedMut = self.getMutants(result)
-                open(self.path + '.{0}.M.cov'.format(m), 'w').write(''.join(coverage))
+                open(self.path + '.{0}.M.cov'.format(m), 'w').write(''.join(map(lambda n: str(n), coverage)))
                 open(self.path + '.{0}.M.mut'.format(m), 'w').write('\n'.join(sorted(detectedMut)))
 
                 print 'RES:', m, len(result)
