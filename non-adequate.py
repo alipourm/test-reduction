@@ -245,7 +245,7 @@ class NonAdq(DD.DD):
         self.oracle = oracle
         self.mutants = mutants
         self.lineCov = self.getCoverage(deltas)
-        self.detectedMutants = self.getMutants(deltas)
+        self.detectedMutants = self.getMutants(deltas)      
         open(self.path + '.cov', 'w').write(''.join(map(lambda s:str(s), self.lineCov)))
         open(self.path + '.mut', 'w').write('\n'.join(sorted(self.detectedMutants)))
 
