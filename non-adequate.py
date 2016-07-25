@@ -5,6 +5,9 @@ import os
 import random
 import re
 import time
+import shlex
+from joblib import Parallel, delayed
+from subprocess import check_output, CalledProcessError
 
 
 class TimeoutError(Exception):
@@ -14,9 +17,13 @@ class TimeoutError(Exception):
 FNULL = open(os.devnull, 'w')
 def ex(cmd):
     # print(cmd)
-    status, output = commands.getstatusoutput(cmd)
-    # print output
-    return str(status) + '--' + output
+    try:
+        out = check_output(shlex.split(cmd), stderr=FNULL)
+        status = 0
+    except CalledProcessError as ce:
+        out = ce.output
+        status = ce.returncode
+    return str(status) + '--' + out
 
 
 
@@ -25,6 +32,75 @@ import tempfile
 def log(s):
     print s
     pass
+
+
+
+
+
+
+def runWithEXT(sut, executable, deltas):
+        out = ''
+        f = tempfile.NamedTemporaryFile(mode='w+t')
+        testpath = f.name
+        # log('executable: ' + executable)
+        if sut == NonAdq.GREP:
+            cmd = 'timeout 1 {0} {1} {2}'.format(executable, ''.join(deltas), "grepsrc/grep1.dat")
+            out = ex(cmd)
+            return out
+
+        if sut == NonAdq.YAFFS:
+            s = '\n'.join(deltas)
+            f.write(s)
+            f.flush()
+            cmd = "timeout 1 {0} {1}".format(executable, testpath)
+            out = ex(cmd)
+
+        if sut == NonAdq.JS:
+            s = js.prefix + '\n' + '\n'.join(deltas)
+            f.write(s)
+            f.flush()
+            cmd = "timeout 1 {0} -f {1}".format(executable, testpath)
+            out = ex(cmd)
+            pattern = re.compile("before [0-9]+, after [0-9]+, break [0-9a-f]+")
+            return pattern.sub('', out)
+
+
+        if sut == NonAdq.GZIP:
+            s = ''.join(deltas)
+            f.write(s)
+            f.flush()
+            cmd1 = "rm -f {0}.gz".format(testpath)
+            cmd2 = "timeout 1 {0} {1}".format(executable, testpath)
+            cmd3 = "rm -f {0}".format(testpath)
+            cmd4 = "timeout 1 {0} -d {1}.gz".format(executable, testpath)
+
+
+
+            for c in [cmd1, cmd2, cmd3, cmd4]:
+                out += ex(c)
+
+            if os.path.exists(testpath):
+                f  = open(testpath)
+                dd = f.read()
+                if dd == s:
+                    out += 'OK!'
+                else:
+                    out += 'NO!'
+
+            return out
+
+
+
+def ddtt(sut, deltas, oracleout, m):
+    if oracleout != runWithEXT(sut, m, deltas):
+        return m
+    else:
+        return None
+
+
+def getMUT_Ext(sut, deltas, mutants, oracleout):
+        return Parallel(n_jobs=5)(delayed(ddtt)(sut,deltas,oracleout, m) for m in mutants)
+
 
 class NonAdq(DD.DD):
     YAFFS = 0
@@ -80,7 +156,7 @@ class NonAdq(DD.DD):
                 else:
                     out += 'NO!'
 
-            return out
+        return out
 
     cache = {}
 
@@ -142,12 +218,19 @@ class NonAdq(DD.DD):
             return False
 
 
+
+
+
     def getMutants(self, deltas):
         detectedMutants = []
-        for m in self.mutants:
-            if self.detects(deltas, m):
-                detectedMutants.append(m)
-        return detectedMutants
+# sut, deltas, mutants, oracleout
+        l =  getMUT_Ext(self.sut, deltas, self.mutants, self.getOracleOut(deltas))
+        l2 = filter(lambda x: x is not None,l)
+        print len(l2)
+        exit(0)
+        return l2
+
+
 
 
 
@@ -163,8 +246,12 @@ class NonAdq(DD.DD):
         self.mutants = mutants
         self.lineCov = self.getCoverage(deltas)
         self.detectedMutants = self.getMutants(deltas)
+        open(self.path + '.cov', 'w').write(''.join(map(lambda s:str(s), self.lineCov)))
+        open(self.path + '.mut', 'w').write('\n'.join(sorted(self.detectedMutants)))
+
         print 'detected:', len(self.detectedMutants)
         print 'all:', len(mutants)
+
 
 
 
