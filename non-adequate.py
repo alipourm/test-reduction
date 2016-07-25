@@ -297,7 +297,7 @@ if __name__ == '__main__':
         for c in tcfile.read().strip():
             deltas.append(c)
         ex('git clone --depth 1 https://github.com/osustarg/grepsrc.git')
-        p = subprocess.Popen(['make', 'build'], cwd='grepsrc', shell=True)
+        p = subprocess.Popen(['make', 'build'], cwd='grepsrc')
         p.wait()
 
     if sutStr == 'gzip':
@@ -345,5 +345,3 @@ if __name__ == '__main__':
 
 
     myDD.experiment()
-
-
