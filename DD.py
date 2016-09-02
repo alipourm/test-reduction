@@ -612,7 +612,7 @@ class DD:
     def _dd(self, c, n):
 	"""Stub to overload in subclasses"""
 
-#        assert self.test([]) == self.PASS
+        assert self.test([]) == self.PASS
 
 	run = 1
         cbar_offset = 0
@@ -620,7 +620,8 @@ class DD:
 	# We replace the tail recursion from the paper by a loop
 	while 1:
             tc = self.test(c)
- #           assert tc == self.FAIL or tc == self.UNRESOLVED
+            print 'TC', tc
+            assert tc == self.FAIL or tc == self.UNRESOLVED
 
             if n > len(c):
                 # No further minimizing
