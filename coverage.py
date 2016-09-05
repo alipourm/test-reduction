@@ -16,23 +16,29 @@ class Coverage():
             raise IllegalOperation("Illegal operation: subtraction of lists with different sizes")
 
         pairs = zip(self.coverage, other.coverage)
-        result = map(lambda (fst,snd): 1 if fst == 1 and snd == 0 else 0, pairs)
+        result = map(lambda x: 1 if x[0] == 1 and x[1] == 0 else 0, pairs)
         return Coverage(result)
 
     def isSimilar(self, other, percentage):
         pairs = zip(self.coverage, other.coverage)
         result = map(lambda (fst,snd): 1 if fst == 1 and snd == 1 else 0, pairs)
         p = sum(result)*100./sum(other.coverage)
-        print 'PERCENTAGE', p
+        # print 'PERCENTAGE', p
         if p >= percentage:
             return True
         else:
             return False
 
     def contains(self, other):
-        for i in range(len(self.coverage)):
+        k = 0
+        ln = len(self.coverage)
+        w  = sum(self.coverage)
+        for i in range(ln):
             if other.coverage[i] == 1 and self.coverage[i] == 0:
-                return False
+                k += 1
+                print 'k', k
+                if k > w*.01:
+                    return False
         return True
 
 

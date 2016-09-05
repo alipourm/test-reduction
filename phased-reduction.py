@@ -1,5 +1,6 @@
-from nonadequate import *
+from nonadequate import NonAdq, prepare, ex
 import time
+import argparse
 
 def main():
     parser = argparse.ArgumentParser()
@@ -14,9 +15,11 @@ def main():
     mutants = [] # map(lambda s:s.strip(), open(mutantFile).readlines())
     print gcov_files
     myDD = NonAdq(tc, sut, deltas, mutants, gcov_dir, gcov_exe, oracle, gcov_files)
-
-
     originalCoverage      = myDD.getCoverage(deltas)
+    d1 = deltas[:]
+    print sum(originalCoverage.coverage)
+    # exit()
+
     print  ex('cp {0}/{1} t1.gcov'.format(gcov_dir, gcov_files[0]))
 
 
@@ -29,16 +32,30 @@ def main():
 
 
     # calculate requirement for phase 2
-
+    d2 = deltas[:]
     originalCoverage2      = myDD.getCoverage(deltas)
-    print ex('cp {0}/{1} t2.gcov').format(gcov_dir, gcov_files[0])
-    print sum(originalCoverage.coverage), sum(originalCoverage2.coverage)
-    assert originalCoverage.contains(originalCoverage2)
 
+    print  ex('cp {0}/{1} t2.gcov'.format(gcov_dir, gcov_files[0]))
+
+    open('d1.txt', 'w').write('\n'.join(d1))
+    open('d2.txt', 'w').write('\n'.join(d2))
+    open('c1.txt', 'w').write('\n'.join(map(str, originalCoverage.coverage)))
+    open('c2.txt', 'w').write('\n'.join(map(str, originalCoverage2.coverage)))
+
+    assert d1 == d2
+   # assert originalCoverage.coverage == originalCoverage2.coverage
+   # print sum(originalCoverage.coverage), sum(originalCoverage2.coverage)
+   # assert originalCoverage.contains(originalCoverage2)
+#    exit()
 
     secondPhaseReq   = originalCoverage - phaseOneCoverage
-
+    open('orig.txt', 'w').write('\n'.join(map(str, originalCoverage.coverage)))
+    open('phase1.txt', 'w').write('\n'.join(map(str, phaseOneCoverage.coverage)))
+    open('phase2.txt', 'w').write('\n'.join(map(str, secondPhaseReq.coverage)))
+ #   l1 = zip (originalCoverage.coverage, phaseOneCoverage.coverage, phaseTwoCoverage.coverage)
+#    assert all(map(lambda x: x[0] = x[1] + x[2], l1))
     # phase 2
+    myDD = NonAdq(tc, sut, d1, mutants, gcov_dir, gcov_exe, oracle, gcov_files)
     phaseTwoTC = myDD.ccoverageList(secondPhaseReq)
     elapsedPhased = time.time() - start
 

@@ -53,10 +53,10 @@ class NonAdq(DD.DD):
             s = '\n'.join(deltas)
             f.write(s)
             f.flush()
-            f.close()
+           
             cmd = "timeout 1 {0} {1}".format(executable, testpath)
             out = ex(cmd)
-
+            # print cmd, out
         if self.sut == NonAdq.JS:
             s = js.prefix + '\n' + '\n'.join(deltas)
             f.write(s)
@@ -96,12 +96,12 @@ class NonAdq(DD.DD):
         return e
 
     def getCoverage(self, deltas):
-
         cmd = "rm -f {0}/*.gcov {0}/*.gcda".format(self.gcov_dir)
         ex(cmd)
         for f in self.gcov_files:
             cmd = "rm -f {0}/{1}.gcov {0}/{1}.gcda".format(self.gcov_dir, f)
             ex(cmd)
+        # print deltas
         self.runWith(self.gcov_dir + "/" + self.gcov_exe, deltas)
         gcnos = glob.glob(self.gcov_dir + "/*gcno")
         # log('calcov')
@@ -118,6 +118,8 @@ class NonAdq(DD.DD):
         cov = []
         for gf in self.gcov_files:
             f = os.path.join(self.gcov_dir, gf)
+            # print 'gcov file', f
+            # exit(0)
             # print 'GCOV', f
             with open(f) as gcovfile:
                 for l in gcovfile.readlines():
@@ -127,8 +129,8 @@ class NonAdq(DD.DD):
                     elif l[0].isdigit():
                         cov.append(1)
                 gcovfile.close()
-        cmd = "rm -f {0}/*.gcov {0}/*.gcda".format(self.gcov_dir)
-        ex(cmd)
+        #cmd = "rm -f {0}/*.gcov {0}/*.gcda".format(self.gcov_dir)
+        #ex(cmd)
         # print 'LEN', len(cov), sum(cov)
         return Coverage(cov)
 
@@ -151,7 +153,7 @@ class NonAdq(DD.DD):
         DD.DD.__init__(self)
         self.path = path
         self.sut = sut
-        self.deltas = deltas
+        self.deltas = deltas[:]
         self.gcov_dir = gcov_dir
         self.gcov_exe = gcov_exe
         self.oracle = oracle
@@ -310,7 +312,8 @@ def prepare(tc, sutStr):
 
 
 
-if __name__ == '__main__':
+#if __name__ == '__main__':
+def m():
     parser = argparse.ArgumentParser()
     parser.add_argument('-sut', required=True)
     parser.add_argument('-tc', required=True)
