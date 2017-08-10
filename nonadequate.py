@@ -121,9 +121,9 @@ class NonAdq(DD.DD):
             f = f.split(os.sep)[-1]
             ret = subprocess.call(['gcov', f], cwd=self.gcov_dir, stdout=FNULL)
 
-        gcovs = sorted(glob.glob(self.gcov_dir + "/*.gcov"))
+        
         cov = []
-        for gf in self.gcov_files:
+        for gf in sorted(self.gcov_files):
             f = os.path.join(self.gcov_dir, gf)
             with open(f) as gcovfile:
                 for l in gcovfile.readlines():

@@ -11,6 +11,10 @@ class Coverage():
             raise IllegalOperation('it must be a list')
         self.coverage = coverage
 
+
+    def __str__(self):
+        return ''.join(map(str, self.coverage))
+        
     def __sub__(self, other):
         if len(self.coverage) != len(other.coverage):
             raise IllegalOperation("Illegal operation: subtraction of lists with different sizes")

@@ -80,14 +80,18 @@ def main():
     # adeqTCLen = len(adeqTC)
 
 
-
-    print 'elapsed phased:', elapsedPhased
-    print 'phased diff percent:', phasedTotalCoverage.diff_percent(originalCoverage)
-    print 'phased diff val:', phasedTotalCoverage.diff_val(originalCoverage)
-    print 'phased TCLen Total', phasedTotalLen
-    print 'phase 1 TCLen Total', len(firstPhaseTC)
-    print 'phase 2 TCLen Total', len(phaseTwoTC )
-
+    log('C: {0}'.format(C))
+    log('elapsedTime: {0}'.format(elapsedPhased))
+    log('phaseOneLen: {0}'.format(len(firstPhaseTC)))
+    log('phaseTwoLen: {0}'.format(len(phaseTwoTC)))
+    log('out1: {0}'.format(out1))
+    log('out2: {0}'.format(out2))
+    log('tcCov: {}'.format(originalCoverage))
+    log('out1Cov: {}'.format(phaseOneCoverage))
+    log('out2Cov: {}'.format(phaseTwoCoverage))
+    
+    
+    
 
     open(out1, 'w').write(myDD.coerce(firstPhaseTC))
     open(out2, 'w').write(myDD.coerce( phaseTwoTC))
