@@ -9,23 +9,13 @@ import tempfile
 import argparse
 import subprocess
 from coverage import Coverage
+from myutil import *
 import glob
 
 
 class TimeoutError(Exception):
     pass
 
-
-FNULL = open(os.devnull, 'w')
-def ex(cmd):
-    # print(cmd)
-    status, output = commands.getstatusoutput(cmd)
-    # print output
-    return str(status) + '--' + output
-
-def log(s):
-    print s
-    pass
 
 
 
@@ -39,6 +29,23 @@ class NonAdq(DD.DD):
     NMUT = 0
     CCOV = 1
 
+    def __init__(self, path, sut, deltas, mutants, gcov_dir, gcov_exe, oracle, gcov_files):
+        DD.DD.__init__(self)
+
+        self.path = path
+        self.sut = sut
+        self.deltas = deltas[:]
+        self.gcov_dir = gcov_dir
+        self.gcov_exe = gcov_exe
+        self.oracle = oracle
+        self.mutants = mutants
+        self.gcov_files = sorted(gcov_files)
+
+        self.lineCov = self.getCoverage(deltas)
+        self.detectedMutants = self.getMutants(deltas)
+        print 'detected:', len(self.detectedMutants)
+        print 'all:', len(mutants)
+
 
     def runWith(self, executable, deltas):
         out = ''
@@ -51,12 +58,16 @@ class NonAdq(DD.DD):
 
         if self.sut == NonAdq.YAFFS:
             s = '\n'.join(deltas)
+
+            f = tempfile.NamedTemporaryFile(mode='w+t')
+            testpath = f.name
+
             f.write(s)
             f.flush()
-           
+
             cmd = "timeout 1 {0} {1}".format(executable, testpath)
             out = ex(cmd)
-            # print cmd, out
+
         if self.sut == NonAdq.JS:
             s = js.prefix + '\n' + '\n'.join(deltas)
             f.write(s)
@@ -101,26 +112,19 @@ class NonAdq(DD.DD):
         for f in self.gcov_files:
             cmd = "rm -f {0}/{1}.gcov {0}/{1}.gcda".format(self.gcov_dir, f)
             ex(cmd)
-        # print deltas
+    
         self.runWith(self.gcov_dir + "/" + self.gcov_exe, deltas)
         gcnos = glob.glob(self.gcov_dir + "/*gcno")
-        # log('calcov')
+    
 
         for f in gcnos:
             f = f.split(os.sep)[-1]
             ret = subprocess.call(['gcov', f], cwd=self.gcov_dir, stdout=FNULL)
 
         gcovs = sorted(glob.glob(self.gcov_dir + "/*.gcov"))
-        # if self.sut == NonAdq.YAFFS:
-        #     gcovs = ['yaffstest/yaffs2tester/yaffs2.c.gcov']
-        # if self.sut == NonAdq.GREP:
-        #     gcovs = ['grepsrc/grep.c.gcov']
         cov = []
         for gf in self.gcov_files:
             f = os.path.join(self.gcov_dir, gf)
-            # print 'gcov file', f
-            # exit(0)
-            # print 'GCOV', f
             with open(f) as gcovfile:
                 for l in gcovfile.readlines():
                     l = l.strip()
@@ -129,9 +133,6 @@ class NonAdq(DD.DD):
                     elif l[0].isdigit():
                         cov.append(1)
                 gcovfile.close()
-        #cmd = "rm -f {0}/*.gcov {0}/*.gcda".format(self.gcov_dir)
-        #ex(cmd)
-        # print 'LEN', len(cov), sum(cov)
         return Coverage(cov)
 
     def detects(self, deltas, m):
@@ -149,25 +150,7 @@ class NonAdq(DD.DD):
                 detectedMutants.append(m)
         return detectedMutants
 
-    def __init__(self, path, sut, deltas, mutants, gcov_dir, gcov_exe, oracle, gcov_files):
-        DD.DD.__init__(self)
-        self.path = path
-        self.sut = sut
-        self.deltas = deltas[:]
-        self.gcov_dir = gcov_dir
-        self.gcov_exe = gcov_exe
-        self.oracle = oracle
-        self.mutants = mutants
-        self.gcov_files = sorted(gcov_files)
-        self.lineCov = self.getCoverage(deltas)
-        self.detectedMutants = self.getMutants(deltas)
-
-        # open(self.path + '.cov', 'w').write(''.join(map(lambda s:str(s), self.lineCov)))
-        # open(self.path + '.mut', 'w').write('\n'.join(sorted(self.detectedMutants)))
-
-        print 'detected:', len(self.detectedMutants)
-        print 'all:', len(mutants)
-
+   
     def checkCov(self, deltas, c):
         newcov = self.getCoverage(deltas)
         if newcov.isSimilar(self.lineCov, c):
@@ -226,8 +209,8 @@ class NonAdq(DD.DD):
 
     def checkListCoverage(self, deltas, l):
         newCov  = self.getCoverage(deltas)
-        print sum(newCov.coverage), sum(l.coverage)
-        print 'DELTA LEN:', len(deltas)
+        #print sum(newCov.coverage), sum(l.coverage)
+        #print 'DELTA LEN:', len(deltas)
         if newCov.contains(l):
             return self.FAIL
         else:
@@ -263,18 +246,20 @@ def prepare(tc, sutStr):
         gcov_exe = "grep.exe"
         oracle = gcov_dir + "/" + gcov_exe
         deltas = []
+        gcov_files = []
         for c in tcfile.read().strip():
             deltas.append(c)
         ex('git clone --depth 1 https://github.com/osustarg/grepsrc.git')
         p = subprocess.Popen(['make', 'build'], cwd='grepsrc')
         p.wait()
 
-    if sutStr == 'gzip':
+    elif sutStr == 'gzip':
         sut = NonAdq.GZIP
         gcov_dir = "gzipsrc"
         gcov_exe = "gzip"
         oracle = gcov_dir + "/" + gcov_exe
         deltas = []
+        gcov_files = []
         for c in tcfile.read().strip():
             deltas.append(c)
         ex('git clone --depth 1 https://github.com/osustarg/gzipsrc.git')
@@ -284,7 +269,7 @@ def prepare(tc, sutStr):
         p.wait()
 
 
-    if sutStr == 'yaffs':
+    elif sutStr == 'yaffs':
         sut = NonAdq.YAFFS
         gcov_dir = "yaffstest/yaffs2tester"
         gcov_exe = "yaffs2_gcov"
@@ -296,16 +281,34 @@ def prepare(tc, sutStr):
         p.wait()
 
 
-    if sutStr == 'js':
+    elif sutStr == 'js':
         sut = NonAdq.JS
         gcov_dir = "spidermonkey/js1.6/src/Linux_All_DBG.OBJ"
         gcov_exe = "js"
+        gcov_files = []
         oracle = gcov_dir + "/" + gcov_exe
         deltas = map(lambda s: s.strip(), tcfile.readlines())
         ex('git clone --depth 1 https://github.com/osustarg/spidermonkey.git')
         p = subprocess.Popen(['make', '-f', 'Makefile.ref'], cwd='spidermonkey/js1.6/src/')
         p.wait()
 
+
+    elif sutStr == 'gcc':
+        sut = NonAdq.GCC
+        gcov_dir = ""
+        gcov_exe = "gcc"
+        gcov_files = []
+        oracle = gcov_dir + "/" + gcov_exe
+        deltas = map(lambda s: s.strip(), tcfile.readlines())
+        ex('git clone --depth 1 https://github.com/osustarg/spidermonkey.git')
+        p = subprocess.Popen(['make', '-f', 'Makefile.ref'], cwd='spidermonkey/js1.6/src/')
+        p.wait()
+
+
+
+
+
+        
     tcfile.close()
     print gcov_files
     return  sut, deltas, gcov_dir,gcov_exe,oracle, gcov_files
