@@ -620,7 +620,7 @@ class DD:
 	# We replace the tail recursion from the paper by a loop
 	while 1:
             tc = self.test(c)
-            print 'TC', tc
+            
             assert tc == self.FAIL or tc == self.UNRESOLVED
 
             if n > len(c):

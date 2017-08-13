@@ -31,7 +31,6 @@ class NonAdq(DD.DD):
 
     def __init__(self, path, sut, deltas, mutants, gcov_dir, gcov_exe, oracle, gcov_files):
         DD.DD.__init__(self)
-
         self.path = path
         self.sut = sut
         self.deltas = deltas[:]
@@ -40,7 +39,6 @@ class NonAdq(DD.DD):
         self.oracle = oracle
         self.mutants = mutants
         self.gcov_files = sorted(gcov_files)
-
         self.lineCov = self.getCoverage(deltas)
         self.detectedMutants = self.getMutants(deltas)
         print 'detected:', len(self.detectedMutants)
@@ -57,7 +55,7 @@ class NonAdq(DD.DD):
             out = ex(cmd)
 
         if self.sut == NonAdq.YAFFS:
-            s = '\n'.join(deltas)
+            s = '\n'.join(map(lambda s: s[1],deltas))
 
             f = tempfile.NamedTemporaryFile(mode='w+t')
             testpath = f.name
@@ -112,15 +110,14 @@ class NonAdq(DD.DD):
         for f in self.gcov_files:
             cmd = "rm -f {0}/{1}.gcov {0}/{1}.gcda".format(self.gcov_dir, f)
             ex(cmd)
-    
+        rets = []
         self.runWith(self.gcov_dir + "/" + self.gcov_exe, deltas)
         gcnos = glob.glob(self.gcov_dir + "/*gcno")
-    
-
         for f in gcnos:
             f = f.split(os.sep)[-1]
-            ret = subprocess.call(['gcov', f], cwd=self.gcov_dir, stdout=FNULL)
-
+            ret = subprocess.call (['gcov', f], cwd=self.gcov_dir, stdout=FNULL)
+            rets.append(ret)
+            
         
         cov = []
         for gf in sorted(self.gcov_files):
@@ -128,10 +125,12 @@ class NonAdq(DD.DD):
             with open(f) as gcovfile:
                 for l in gcovfile.readlines():
                     l = l.strip()
-                    if l.startswith('####'):# or l.startswith('-'):
+                    if l.startswith('####') or l.startswith('-'):
                         cov.append(0)
                     elif l[0].isdigit():
                         cov.append(1)
+                    
+                   
                 gcovfile.close()
         return Coverage(cov)
 
@@ -173,7 +172,7 @@ class NonAdq(DD.DD):
 
     def coerce(self, deltas):
         if self.sut == NonAdq.YAFFS or self.sut == NonAdq.JS:
-            return '\n'.join(deltas)
+            return '\n'.join(map(lambda p:p[1],deltas))
         if self.sut == NonAdq.GREP or self.sut == NonAdq.GZIP:
             return ''.join(deltas)
         raise NotImplementedError
@@ -209,11 +208,11 @@ class NonAdq(DD.DD):
 
     def checkListCoverage(self, deltas, l):
         newCov  = self.getCoverage(deltas)
-        #print sum(newCov.coverage), sum(l.coverage)
-        #print 'DELTA LEN:', len(deltas)
+
         if newCov.contains(l):
             return self.FAIL
         else:
+            
             return self.PASS
 
     def ccoverageList(self, cList):
@@ -225,8 +224,8 @@ class NonAdq(DD.DD):
 
     def _test(self, deltas):
         # returns either self.PASS, self.FAIL, or self.UNRESOLVED.
-        if time.time() - self.starttime > 1800: # 30 minute timout
-            raise TimeoutError('Timeout!')
+        #if time.time() - self.starttime > 1800: # 30 minute timout
+        #    raise TimeoutError('Timeout!')
         if deltas == []:
             return self.PASS
         return self.checkfunc(deltas, self.checkfunc_arg)
@@ -275,8 +274,10 @@ def prepare(tc, sutStr):
         gcov_exe = "yaffs2_gcov"
         gcov_files = ['yaffs2.c.gcov']
         oracle = gcov_dir + "/" + gcov_exe
-        deltas = map(lambda s: s.strip(), tcfile.readlines())
-        ex('git clone --depth 1 https://github.com/alipourm/yaffstest.git')
+        lines = map(lambda s: s.strip(), tcfile.readlines())
+        deltas= zip(range(len(lines)), lines) 
+        if not os.path.exists('yaffstest'):
+            ex('git clone --depth 1 https://github.com/alipourm/yaffstest.git')
         p = subprocess.Popen(['make', '-f',  'TestMakefile'], cwd='yaffstest/yaffs2tester')
         p.wait()
 
@@ -310,12 +311,11 @@ def prepare(tc, sutStr):
 
         
     tcfile.close()
-    print gcov_files
     return  sut, deltas, gcov_dir,gcov_exe,oracle, gcov_files
 
 
 
-#if __name__ == '__main__':
+
 def m():
     parser = argparse.ArgumentParser()
     parser.add_argument('-sut', required=True)
@@ -330,7 +330,5 @@ def m():
 
     mutants = map(lambda s:s.strip(), open(mutantFile).readlines())
     myDD = NonAdq(tc, sut, delta, mutants, gcov_dir, gcov_exe, oracle, gcov_files)
-    print myDD.detects(delta, gcov_dir + '/' + gcov_exe)
-
-
+    
     myDD.experiment()

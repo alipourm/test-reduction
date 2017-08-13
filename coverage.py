@@ -4,7 +4,7 @@ class IllegalOperation(Exception):
         pass
 
 
-
+import math
 class Coverage():
     def __init__(self, coverage):
         if type(coverage) is not list:
@@ -26,8 +26,8 @@ class Coverage():
     def isSimilar(self, other, percentage):
         pairs = zip(self.coverage, other.coverage)
         result = map(lambda (fst,snd): 1 if fst == 1 and snd == 1 else 0, pairs)
-        p = sum(result)*100./sum(other.coverage)
-        # print 'PERCENTAGE', p
+        p = math.floor((sum(result))*100./sum(other.coverage))  
+        # print '{0} from {1}'.format(p, percentage)
         if p >= percentage:
             return True
         else:
@@ -40,9 +40,9 @@ class Coverage():
         for i in range(ln):
             if other.coverage[i] == 1 and self.coverage[i] == 0:
                 k += 1
-                print 'k', k
-                if k > w*.01:
-                    return False
+                # print 'k= {0}, i={1}'.format( k, i)
+                #if k > w*.01:
+                return False
         return True
 
 
@@ -65,3 +65,5 @@ class Coverage():
         return Coverage(result)
 
 
+
+    

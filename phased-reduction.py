@@ -36,36 +36,25 @@ def main():
     # mutantFile = args.mutfile
     mutants = [] 
     sut, deltas, gcov_dir,gcov_exe,oracle, gcov_files = prepare(tc, sutStr)     
-    print gcov_files
+    
     myDD = NonAdq(tc, sut, deltas, mutants, gcov_dir, gcov_exe, oracle, gcov_files)
     originalCoverage      = myDD.getCoverage(deltas)
     d1 = deltas[:]
-    print sum(originalCoverage.coverage)
-
-    print  ex('cp {0}/{1} t1.gcov'.format(gcov_dir, gcov_files[0]))
-
-
-
-
-
-
+    
     # phase 1
     start = time.time()
     firstPhaseTC     = myDD.ccoverage(C)
     phaseOneCoverage   = myDD.getCoverage(firstPhaseTC)
 
-
     # calculate requirement for phase 2
     d2 = deltas[:]
-    originalCoverage2      = myDD.getCoverage(deltas)
-
-    print  ex('cp {0}/{1} t2.gcov'.format(gcov_dir, gcov_files[0]))
-
     secondPhaseReq   = originalCoverage - phaseOneCoverage
-
-    
+    #print 'second-original:',secondPhaseReq.diff_val(originalCoverage)
+    #print originalCoverage.contains(secondPhaseReq)
+    #print 'starting phase 2'
     # phase 2
-    myDD = NonAdq(tc, sut, d1, mutants, gcov_dir, gcov_exe, oracle, gcov_files)
+    myDD = NonAdq(tc, sut, d2, mutants, gcov_dir, gcov_exe, oracle, gcov_files)
+    
     phaseTwoTC = myDD.ccoverageList(secondPhaseReq)
     elapsedPhased = time.time() - start
 
