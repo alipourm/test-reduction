@@ -5,7 +5,9 @@ class IllegalOperation(Exception):
 
 
 import math
+
 class Coverage():
+    
     def __init__(self, coverage):
         if type(coverage) is not list:
             raise IllegalOperation('it must be a list')
@@ -66,4 +68,5 @@ class Coverage():
 
 
 
-    
+
+Zero = Coverage([])

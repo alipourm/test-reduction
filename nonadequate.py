@@ -18,6 +18,7 @@ class TimeoutError(Exception):
 
 
 
+file_line = {}
 
 
 class NonAdq(DD.DD):
@@ -25,7 +26,8 @@ class NonAdq(DD.DD):
     JS = 1
     GZIP = 2
     GREP = 3
-
+    GCC  = 4
+    
     NMUT = 0
     CCOV = 1
 
@@ -51,8 +53,12 @@ class NonAdq(DD.DD):
         testpath = f.name
         # log('executable: ' + executable)
         if self.sut == NonAdq.GREP:
-            cmd = 'timeout 1 {0} {1} {2}'.format(executable, ''.join(deltas), "grepsrc/grep1.dat")
+            # print deltas
+            d = ''.join(map(lambda s:s[1], deltas))
+            cmd = 'timeout 1 {0} {1} {2}'.format(executable, d, "grepsrc/grep1.dat")
             out = ex(cmd)
+            
+            print cmd
 
         if self.sut == NonAdq.YAFFS:
             s = '\n'.join(map(lambda s: s[1],deltas))
@@ -67,7 +73,7 @@ class NonAdq(DD.DD):
             out = ex(cmd)
 
         if self.sut == NonAdq.JS:
-            s = js.prefix + '\n' + '\n'.join(deltas)
+            s = '\n'.join(map(lambda s: s[1],deltas))
             f.write(s)
             f.flush()
             cmd = "timeout 1 {0} -f {1}".format(executable, testpath)
@@ -110,28 +116,43 @@ class NonAdq(DD.DD):
         for f in self.gcov_files:
             cmd = "rm -f {0}/{1}.gcov {0}/{1}.gcda".format(self.gcov_dir, f)
             ex(cmd)
+            
         rets = []
         self.runWith(self.gcov_dir + "/" + self.gcov_exe, deltas)
         gcnos = glob.glob(self.gcov_dir + "/*gcno")
+        # print "GCNO", gcnos
         for f in gcnos:
             f = f.split(os.sep)[-1]
             ret = subprocess.call (['gcov', f], cwd=self.gcov_dir, stdout=FNULL)
             rets.append(ret)
-            
+            # print f, ret
         
         cov = []
+        
         for gf in sorted(self.gcov_files):
             f = os.path.join(self.gcov_dir, gf)
-            with open(f) as gcovfile:
-                for l in gcovfile.readlines():
-                    l = l.strip()
-                    if l.startswith('####') or l.startswith('-'):
-                        cov.append(0)
-                    elif l[0].isdigit():
-                        cov.append(1)
-                    
-                   
-                gcovfile.close()
+            temp = []
+            try:
+                with open(f) as gcovfile:
+                    for l in gcovfile.readlines():
+                        l = l.strip()
+                        if l.startswith('####'): # or l.startswith('-'):
+                            temp.append(0)
+                        elif l[0].isdigit():
+                            temp.append(1)
+            except IOError:
+                pass
+            if gf in file_line:
+                if file_line[gf] != len(temp):
+                    temp = [0 for i in range(file_line[gf])]
+            else:
+                file_line[gf] = len(temp)
+            #print gf, len(temp),sum(temp)
+        
+            cov = cov + temp       
+        #print sum(cov)
+        #print file_line
+        
         return Coverage(cov)
 
     def detects(self, deltas, m):
@@ -145,7 +166,7 @@ class NonAdq(DD.DD):
     def getMutants(self, deltas):
         detectedMutants = []
         for m in self.mutants:
-            if self.detects(deltas, m):
+             if self.detects(deltas, m):
                 detectedMutants.append(m)
         return detectedMutants
 
@@ -174,7 +195,8 @@ class NonAdq(DD.DD):
         if self.sut == NonAdq.YAFFS or self.sut == NonAdq.JS:
             return '\n'.join(map(lambda p:p[1],deltas))
         if self.sut == NonAdq.GREP or self.sut == NonAdq.GZIP:
-            return ''.join(deltas)
+            return ''.join(map(lambda p:p[1],deltas))
+        
         raise NotImplementedError
 
 
@@ -239,15 +261,17 @@ def prepare(tc, sutStr):
 
     tcfile = open(tc)
     import subprocess
+    
     if sutStr == 'grep':
         sut = NonAdq.GREP
         gcov_dir = "grepsrc"
         gcov_exe = "grep.exe"
         oracle = gcov_dir + "/" + gcov_exe
-        deltas = []
-        gcov_files = []
+        cmdline = []
+        gcov_files = ['grep.c.gcov']
         for c in tcfile.read().strip():
-            deltas.append(c)
+            cmdline.append(c)
+        deltas = zip(range(len(cmdline)),cmdline)
         ex('git clone --depth 1 https://github.com/osustarg/grepsrc.git')
         p = subprocess.Popen(['make', 'build'], cwd='grepsrc')
         p.wait()
@@ -286,9 +310,46 @@ def prepare(tc, sutStr):
         sut = NonAdq.JS
         gcov_dir = "spidermonkey/js1.6/src/Linux_All_DBG.OBJ"
         gcov_exe = "js"
-        gcov_files = []
+        gcov_files = [
+            'jsapi.c.gcov',
+            'jsarena.c.gcov',
+            'jsarray.c.gcov',
+            'Jsatom.c.gcov',
+            'jsbool.c.gcov',
+            'js.c.gcov',
+            'jscntxt.c.gcov',
+            'jscpucfg.c.gcov',
+            'jsdate.c.gcov',
+            'jsdbgapi.c.gcov',
+            'jsdhash.c.gcov',
+            'jsdtoa.c.gcov',
+            'jsemit.c.gcov',
+            'jsexn.c.gcov',
+            'jsfun.c.gcov',
+            'jsgc.c.gcov',
+            'jshash.c.gcov',
+            'jsinterp.c.gcov',
+            'jslog2.c.gcov',
+            'jsmath.c.gcov',
+            'js.msg.gcov',
+            'jsnum.c.gcov',
+            'jsobj.c.gcov',
+            'jsopcode.c.gcov',
+            'jsparse.c.gcov',
+            'jsprf.c.gcov',
+            'jsregexp.c.gcov',
+            'jsscan.c.gcov',
+            'jsscope.c.gcov',
+            'jsscript.c.gcov',
+            'jsstr.c.gcov',
+            'jsutil.c.gcov',
+            'jsxdrapi.c.gcov',
+            'jsxml.c.gcov',
+            'prmjtime.c.gcov'
+        ]
         oracle = gcov_dir + "/" + gcov_exe
-        deltas = map(lambda s: s.strip(), tcfile.readlines())
+        lines = map(lambda s: s.strip(), tcfile.readlines()) 
+        deltas = zip(range(len(lines)), lines)
         ex('git clone --depth 1 https://github.com/osustarg/spidermonkey.git')
         p = subprocess.Popen(['make', '-f', 'Makefile.ref'], cwd='spidermonkey/js1.6/src/')
         p.wait()
