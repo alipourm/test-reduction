@@ -48,26 +48,17 @@ def main():
 
     # calculate requirement for phase 2
     d2 = deltas[:]
-    secondPhaseReq   = originalCoverage - phaseOneCoverage
-    #print 'second-original:',secondPhaseReq.diff_val(originalCoverage)
-    #print originalCoverage.contains(secondPhaseReq)
-    #print 'starting phase 2'
+    phaseTwoReq   = originalCoverage - phaseOneCoverage
+    print 'sum original', sum(originalCoverage.coverage)
+    print 'sum requirement', sum(phaseTwoReq.coverage)
+    
     # phase 2
     myDD = NonAdq(tc, sut, d2, mutants, gcov_dir, gcov_exe, oracle, gcov_files)
-    
-    phaseTwoTC = myDD.ccoverageList(secondPhaseReq)
+    phaseTwoTC = myDD.ccoverageList(phaseTwoReq)
     elapsedPhased = time.time() - start
-
     phaseTwoCoverage = myDD.getCoverage(phaseTwoTC)
-    phasedTotalCoverage = phaseOneCoverage + phaseTwoCoverage
-    phasedTotalLen =  len(firstPhaseTC) + len(phaseTwoTC)
-  
-    # start = time.time()
-    # adeqTC     = myDD.ccoverageList(originalCoverage)
-    # adeqCoverage   = myDD.getCoverage(adeqTC)
-    # elapsedAdeq = time.time() - start
-    # adeqTCLen = len(adeqTC)
 
+    phasedTotalLen =  len(firstPhaseTC) + len(phaseTwoTC)
 
     log('C: {0}'.format(C))
     log('elapsedTime: {0}'.format(elapsedPhased))
@@ -77,11 +68,8 @@ def main():
     log('out2: {0}'.format(out2))
     log('tcCov: {}'.format(originalCoverage))
     log('out1Cov: {}'.format(phaseOneCoverage))
-    log('out2Cov: {}'.format(phaseTwoCoverage))
+    log('out2Cov: {}'.format(phaseTwoCoverage)) 
     
-    
-    
-
     open(out1, 'w').write(myDD.coerce(firstPhaseTC))
     open(out2, 'w').write(myDD.coerce( phaseTwoTC))
 

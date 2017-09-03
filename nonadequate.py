@@ -17,8 +17,8 @@ class TimeoutError(Exception):
     pass
 
 
-
-file_line = {}
+class XX:
+    file_line = {}
 
 
 class NonAdq(DD.DD):
@@ -49,9 +49,7 @@ class NonAdq(DD.DD):
 
     def runWith(self, executable, deltas):
         out = ''
-        f = tempfile.NamedTemporaryFile(mode='w+t')
-        testpath = f.name
-        # log('executable: ' + executable)
+        
         if self.sut == NonAdq.GREP:
             # print deltas
             d = ''.join(map(lambda s:s[1], deltas))
@@ -73,13 +71,19 @@ class NonAdq(DD.DD):
             out = ex(cmd)
 
         if self.sut == NonAdq.JS:
-            s = '\n'.join(map(lambda s: s[1],deltas))
+            import jsconstant
+            s = jsconstant.prefix + '\n'
+            s += '\n'.join(map(lambda s: s[1],deltas))
+            f = tempfile.NamedTemporaryFile(mode='w+t',suffix='.js')
+            testpath = f.name
             f.write(s)
             f.flush()
-            cmd = "timeout 1 {0} -f {1}".format(executable, testpath)
+            
+            cmd = "timeout 3 {0} -f {1}".format(executable, testpath)
             out = ex(cmd)
-            pattern = re.compile("before [0-9]+, after [0-9]+, break [0-9a-f]+")
-            return pattern.sub('', out)
+            # print out
+            #pattern = re.compile("before [0-9]+, after [0-9]+, break [0-9a-f]+")
+            #return pattern.sub('', out)
 
         if self.sut == NonAdq.GZIP:
             s = ''.join(deltas)
@@ -88,7 +92,7 @@ class NonAdq(DD.DD):
             cmd1 = "rm -f {0}.gz".format(testpath)
             cmd2 = "timeout 1 {0} {1}".format(executable, testpath)
             cmd3 = "rm -f {0}".format(testpath)
-            cmd4 = "timeout 1 {0} -d {1}.gz".format(executable, testpath)
+            cmd4 = "timeout 3 {0} -d {1}.gz".format(executable, testpath)
             for c in [cmd1, cmd2, cmd3, cmd4]:
                 out += ex(c)
             if os.path.exists(testpath):
@@ -120,15 +124,14 @@ class NonAdq(DD.DD):
         rets = []
         self.runWith(self.gcov_dir + "/" + self.gcov_exe, deltas)
         gcnos = glob.glob(self.gcov_dir + "/*gcno")
-        # print "GCNO", gcnos
+       
         for f in gcnos:
             f = f.split(os.sep)[-1]
-            ret = subprocess.call (['gcov', f], cwd=self.gcov_dir, stdout=FNULL)
+            ret = subprocess.call (['gcov', f], cwd=self.gcov_dir, stdout=FNULL,  stderr=FNULL)
             rets.append(ret)
             # print f, ret
         
         cov = []
-        
         for gf in sorted(self.gcov_files):
             f = os.path.join(self.gcov_dir, gf)
             temp = []
@@ -141,13 +144,14 @@ class NonAdq(DD.DD):
                         elif l[0].isdigit():
                             temp.append(1)
             except IOError:
+                print 'FIle {0} was not found.'.format(f)
                 pass
-            if gf in file_line:
-                if file_line[gf] != len(temp):
-                    temp = [0 for i in range(file_line[gf])]
-            else:
-                file_line[gf] = len(temp)
-            #print gf, len(temp),sum(temp)
+        
+            if gf in XX.file_line and len(temp) == 0:
+                temp = [0 for i in range(XX.file_line[gf])]
+            if gf not in XX.file_line:
+                XX.file_line[gf] = len(temp)
+ 
         
             cov = cov + temp       
         #print sum(cov)
@@ -196,7 +200,6 @@ class NonAdq(DD.DD):
             return '\n'.join(map(lambda p:p[1],deltas))
         if self.sut == NonAdq.GREP or self.sut == NonAdq.GZIP:
             return ''.join(map(lambda p:p[1],deltas))
-        
         raise NotImplementedError
 
 
@@ -230,11 +233,9 @@ class NonAdq(DD.DD):
 
     def checkListCoverage(self, deltas, l):
         newCov  = self.getCoverage(deltas)
-
         if newCov.contains(l):
             return self.FAIL
         else:
-            
             return self.PASS
 
     def ccoverageList(self, cList):
@@ -314,11 +315,11 @@ def prepare(tc, sutStr):
             'jsapi.c.gcov',
             'jsarena.c.gcov',
             'jsarray.c.gcov',
-            'Jsatom.c.gcov',
+#            'Jsatom.c.gcov',
             'jsbool.c.gcov',
             'js.c.gcov',
             'jscntxt.c.gcov',
-            'jscpucfg.c.gcov',
+ #           'jscpucfg.c.gcov',
             'jsdate.c.gcov',
             'jsdbgapi.c.gcov',
             'jsdhash.c.gcov',

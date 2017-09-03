@@ -46,7 +46,7 @@ cov2 = extractCov(lines[9])
 
 
 covPhased = add(cov1, cov2)
-print 'sum(xor)', sum(xor(cov2, covPhased))
+print 'sum(xor)', sum(xor(covTotal, covPhased))
 # print xor(cov2, cov1)
 print 'sum(cov1) = ', sum(cov1)
 print 'sum(cov2) = ', sum(cov2)
