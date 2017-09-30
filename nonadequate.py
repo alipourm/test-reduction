@@ -10,7 +10,18 @@ import argparse
 import subprocess
 from coverage import Coverage
 from myutil import *
+import jsconstant
 import glob
+
+jscode = """function tryItOut(code){
+    try{
+	eval("(function(){" + code + "});");
+    }
+    catch(compileError){print(compileError)}
+}"""
+
+
+
 
 
 class TimeoutError(Exception):
@@ -49,39 +60,36 @@ class NonAdq(DD.DD):
 
     def runWith(self, executable, deltas):
         out = ''
+
         
         if self.sut == NonAdq.GREP:
             # print deltas
             d = ''.join(map(lambda s:s[1], deltas))
             cmd = 'timeout 1 {0} {1} {2}'.format(executable, d, "grepsrc/grep1.dat")
-            out = ex(cmd)
-            
+            out = ex(cmd)    
             print cmd
 
         if self.sut == NonAdq.YAFFS:
             s = '\n'.join(map(lambda s: s[1],deltas))
-
             f = tempfile.NamedTemporaryFile(mode='w+t')
             testpath = f.name
-
             f.write(s)
             f.flush()
-
             cmd = "timeout 1 {0} {1}".format(executable, testpath)
             out = ex(cmd)
 
         if self.sut == NonAdq.JS:
-            import jsconstant
+
             s = jsconstant.prefix + '\n'
             s += '\n'.join(map(lambda s: s[1],deltas))
             f = tempfile.NamedTemporaryFile(mode='w+t',suffix='.js')
             testpath = f.name
             f.write(s)
             f.flush()
-            
+            print s
             cmd = "timeout 3 {0} -f {1}".format(executable, testpath)
-            out = ex(cmd)
-            # print out
+            out  = ex(cmd)
+            print cmd, out
             #pattern = re.compile("before [0-9]+, after [0-9]+, break [0-9a-f]+")
             #return pattern.sub('', out)
 
@@ -103,6 +111,15 @@ class NonAdq(DD.DD):
                 else:
                     out += 'NO!'
 
+        if self.sut == NonAdq.GCC:
+            f = tempfile.NamedTemporaryFile(mode='w+t', suffix='.c')
+            testpath = f.name
+            s = '\n
+'.join(deltas)
+            f.write(s)
+            f.flush()
+            cmd = "{0} -I /home/maalipou/tools/csmith/include/csmith-2.3.0 -O3 {1}".format(executable, testpath)
+            out = ex(cmd)
         return out
 
     cache = {}
@@ -357,15 +374,15 @@ def prepare(tc, sutStr):
 
 
     elif sutStr == 'gcc':
+        GCCTARFILEPATH = 'gcc.sh'
         sut = NonAdq.GCC
         gcov_dir = ""
         gcov_exe = "gcc"
         gcov_files = []
-        oracle = gcov_dir + "/" + gcov_exe
+        oracle = "gcc"
         deltas = map(lambda s: s.strip(), tcfile.readlines())
-        ex('git clone --depth 1 https://github.com/osustarg/spidermonkey.git')
-        p = subprocess.Popen(['make', '-f', 'Makefile.ref'], cwd='spidermonkey/js1.6/src/')
-        p.wait()
+        ex('bash {0}'.format(GCCTARFILEPATH))
+
 
 
 
