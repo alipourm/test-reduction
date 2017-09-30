@@ -78,10 +78,10 @@ class NonAdq(DD.DD):
             testpath = f.name
             f.write(s)
             f.flush()
-            print s
+            # print s
             cmd = "timeout 3 {0} -f {1}".format(executable, testpath)
             out  = ex(cmd)
-            print cmd, out
+            # print cmd, out
             #pattern = re.compile("before [0-9]+, after [0-9]+, break [0-9a-f]+")
             #return pattern.sub('', out)
 
