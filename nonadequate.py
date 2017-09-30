@@ -13,14 +13,6 @@ from myutil import *
 import jsconstant
 import glob
 
-jscode = """function tryItOut(code){
-    try{
-	eval("(function(){" + code + "});");
-    }
-    catch(compileError){print(compileError)}
-}"""
-
-
 
 
 
@@ -114,8 +106,7 @@ class NonAdq(DD.DD):
         if self.sut == NonAdq.GCC:
             f = tempfile.NamedTemporaryFile(mode='w+t', suffix='.c')
             testpath = f.name
-            s = '\n
-'.join(deltas)
+            s = '\n'.join(deltas)
             f.write(s)
             f.flush()
             cmd = "{0} -I /home/maalipou/tools/csmith/include/csmith-2.3.0 -O3 {1}".format(executable, testpath)
