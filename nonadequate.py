@@ -13,12 +13,6 @@ from myutil import *
 import jsconstant
 import glob
 
-jscode = """function tryItOut(code){
-    try{
-	eval("(function(){" + code + "});");
-    }
-    catch(compileError){print(compileError)}
-}"""
 
 
 

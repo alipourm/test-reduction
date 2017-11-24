@@ -7,6 +7,6 @@ function download {
 
 mkdir data
 cd data
-download yaffs
-download js
-download grep
+download yaffs &
+download js &
+download grep &

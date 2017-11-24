@@ -38,6 +38,9 @@ import math
 def xor(arr1, arr2):
     return [arr1[i]^ arr2[i] for i in range(len(arr2))]
 
+def And(arr1, arr2):
+    return [1 if arr1[i]== arr2[i]==1 else 0 for i in range(len(arr2))]
+
 
 lines = logfile.readlines()
 covTotal = extractCov(lines[7])
@@ -46,7 +49,9 @@ cov2 = extractCov(lines[9])
 
 
 covPhased = add(cov1, cov2)
-print 'sum(xor)', sum(xor(covTotal, covPhased))
+print 'sum(xor)', sum(xor(covTotal, cov1))
+print 'sum(xor)', sum(And(covTotal, cov2))
+
 # print xor(cov2, cov1)
 print 'sum(cov1) = ', sum(cov1)
 print 'sum(cov2) = ', sum(cov2)
