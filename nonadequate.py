@@ -15,9 +15,6 @@ import glob
 
 
 
-
-
-
 class TimeoutError(Exception):
     pass
 
@@ -80,10 +77,10 @@ class NonAdq(DD.DD):
             testpath = f.name
             f.write(s)
             f.flush()
-            print s
+            # print s
             cmd = "timeout 3 {0} -f {1}".format(executable, testpath)
             out  = ex(cmd)
-            print cmd, out
+            # print cmd, out
             #pattern = re.compile("before [0-9]+, after [0-9]+, break [0-9a-f]+")
             #return pattern.sub('', out)
 
@@ -108,8 +105,7 @@ class NonAdq(DD.DD):
         if self.sut == NonAdq.GCC:
             f = tempfile.NamedTemporaryFile(mode='w+t', suffix='.c')
             testpath = f.name
-            s = '\n
-'.join(deltas)
+            s = '\n'.join(deltas)
             f.write(s)
             f.flush()
             cmd = "{0} -I /home/maalipou/tools/csmith/include/csmith-2.3.0 -O3 {1}".format(executable, testpath)
